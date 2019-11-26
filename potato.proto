@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package potato;
+
+service Potato {
+  rpc Status(Plan) returns (Plan) {}
+}
+
+message Plan {
+  string id = 1;
+  repeated Container containers = 2;
+}
+
+message Container {}
