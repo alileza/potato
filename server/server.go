@@ -21,7 +21,7 @@ type Server struct {
 }
 
 func NewServer(logger *logrus.Logger, listenAddress string) *Server {
-	entry := logger.WithField("potato", "tomato")
+	entry := logger.WithField("potato", "server")
 
 	opts := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),

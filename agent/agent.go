@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
@@ -26,10 +28,18 @@ func NewAgent(logger *logrus.Logger, ID, serverURL string) *Agent {
 }
 
 func (a *Agent) Start(ctx context.Context) error {
+	entry := a.log.WithField("potato", "agent")
 	t := time.NewTicker(time.Second)
 	defer t.Stop()
 
-	conn, err := grpc.DialContext(ctx, a.ServerURL, grpc.WithInsecure())
+	conn, err := grpc.DialContext(
+		ctx,
+		a.ServerURL,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
+		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+		grpc.WithUnaryInterceptor(grpc_logrus.UnaryClientInterceptor(entry)),
+	)
 	if err != nil {
 		return err
 	}
