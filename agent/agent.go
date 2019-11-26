@@ -57,7 +57,10 @@ func (a *Agent) Start(ctx context.Context) error {
 	}
 
 	a.log.Info("Initiating docker swarm request")
-	resp, err := dockerClient.SwarmInit(ctx, swarm.InitRequest{})
+	resp, err := dockerClient.SwarmInit(ctx, swarm.InitRequest{
+		ListenAddr:      a.ListenAddress,
+		ForceNewCluster: true,
+	})
 	if err != nil {
 		return err
 	}

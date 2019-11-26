@@ -63,7 +63,7 @@ func main() {
 		cli.StringFlag{
 			Name:        "advertise-address",
 			Usage:       "Port to advertise metrics over http",
-			Value:       "0.0.0.0:9000",
+			Value:       "0.0.0.0:9001",
 			EnvVar:      "ADVERTISE_ADDRESS",
 			Destination: &config.AdvertiseAddress,
 		},
