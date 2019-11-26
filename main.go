@@ -25,9 +25,10 @@ Options:
 
 func main() {
 	var config struct {
-		ID            string
-		LogLevel      string
-		ListenAddress string
+		ID               string
+		LogLevel         string
+		ListenAddress    string
+		AdvertiseAddress string
 	}
 	cli.AppHelpTemplate = AppHelpTemplate
 
@@ -54,10 +55,17 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:        "listen-address",
-			Usage:       "Network listen address",
+			Usage:       "Port to wait incoming request from client",
 			Value:       "0.0.0.0:9000",
 			EnvVar:      "LISTEN_ADDRESS",
 			Destination: &config.ListenAddress,
+		},
+		cli.StringFlag{
+			Name:        "advertise-address",
+			Usage:       "Port to advertise metrics over http",
+			Value:       "0.0.0.0:9000",
+			EnvVar:      "ADVERTISE_ADDRESS",
+			Destination: &config.AdvertiseAddress,
 		},
 	}
 
@@ -82,7 +90,7 @@ func main() {
 		case "server":
 			err = server.NewServer(l, config.ListenAddress).Serve(ctxx)
 		case "agent":
-			err = agent.NewAgent(l, config.ID, config.ListenAddress).Start(ctxx)
+			err = agent.NewAgent(l, config.ID, config.ListenAddress, config.AdvertiseAddress).Start(ctxx)
 		default:
 			return errors.New("This command takes one argument: <agent|server>\nFor additional help try 'potato -help'")
 		}

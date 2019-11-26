@@ -2,10 +2,13 @@ package agent
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/oklog/run"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
@@ -15,15 +18,17 @@ import (
 type Agent struct {
 	log *logrus.Logger
 
-	ID        string
-	ServerURL string
+	ID               string
+	ListenAddress    string
+	AdvertiseAddress string
 }
 
-func NewAgent(logger *logrus.Logger, ID, serverURL string) *Agent {
+func NewAgent(logger *logrus.Logger, ID, listenAddress, advertiseAddress string) *Agent {
 	return &Agent{
-		log:       logger,
-		ID:        ID,
-		ServerURL: serverURL,
+		log:              logger,
+		ID:               ID,
+		ListenAddress:    listenAddress,
+		AdvertiseAddress: advertiseAddress,
 	}
 }
 
@@ -34,7 +39,7 @@ func (a *Agent) Start(ctx context.Context) error {
 
 	conn, err := grpc.DialContext(
 		ctx,
-		a.ServerURL,
+		a.ListenAddress,
 		grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
@@ -46,21 +51,35 @@ func (a *Agent) Start(ctx context.Context) error {
 
 	client := pb.NewPotatoClient(conn)
 
-	for range t.C {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+	var g run.Group
+
+	g.Add(func() error {
+		for range t.C {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			plan, err := client.Status(ctx, &pb.Plan{Id: a.ID})
+			if err != nil {
+				a.log.Errorf("Failed to get status: %v", err)
+				continue
+			}
+
+			a.log.Info(plan)
 		}
+		return nil
+	}, a.logError)
 
-		plan, err := client.Status(ctx, &pb.Plan{Id: a.ID})
-		if err != nil {
-			a.log.Errorf("Failed to get status: %v", err)
-			continue
-		}
+	g.Add(func() error {
+		return http.ListenAndServe(a.AdvertiseAddress, promhttp.Handler())
+	}, a.logError)
 
-		a.log.Info(plan)
-	}
+	a.log.Infof("🥔 Agent connecting to %s\n  Advertising metrics to %s", a.ListenAddress, a.AdvertiseAddress)
+	return g.Run()
+}
 
-	return nil
+func (a *Agent) logError(err error) {
+	a.log.Error(err)
 }
