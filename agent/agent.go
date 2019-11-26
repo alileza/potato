@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/docker/docker/api/types/swarm"
+	dockerclient "github.com/docker/docker/client"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/oklog/run"
@@ -48,6 +50,18 @@ func (a *Agent) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	dockerClient, err := dockerclient.NewEnvClient()
+	if err != nil {
+		return err
+	}
+
+	a.log.Info("Initiating docker swarm request")
+	resp, err := dockerClient.SwarmInit(ctx, swarm.InitRequest{})
+	if err != nil {
+		return err
+	}
+	a.log.Info(resp)
 
 	client := pb.NewPotatoClient(conn)
 
