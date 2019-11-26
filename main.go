@@ -17,7 +17,7 @@ import (
 // AppHelpTemplate is the text template for the Default help topic.
 // cli.go uses text/template to render templates. You can
 // render custom help text by setting this variable.
-const AppHelpTemplate = `Usage: {{if .UsageText}}{{.UsageText}}{{else}}potato {{if .VisibleFlags}}[options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}} <agent|server{{end}}{{end}}
+const AppHelpTemplate = `Usage: {{if .UsageText}}{{.UsageText}}{{else}}potato {{if .VisibleFlags}}[options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}} <agent|server>{{end}}{{end}}
 Options:
    {{range $index, $option := .VisibleFlags}}{{if $index}}
    {{end}}{{$option}}{{end}}
