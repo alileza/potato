@@ -1,7 +1,6 @@
-# Docker Swarm orchestrator
-
-![potato](https://user-images.githubusercontent.com/1962129/69705213-6114b380-10f5-11ea-89d5-25d1d1a2371e.png)
-
+# potato
+ 
+![template](https://user-images.githubusercontent.com/1962129/69706966-139a4580-10f9-11ea-82d3-3c752224cbd1.png)
 
 **This project is experimental**, the purpose of this is to be able to manage services in multiple docker swarm node that are not joined as a cluster.
 
