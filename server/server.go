@@ -4,8 +4,10 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"strings"
 
 	pb "github.com/alileza/potato/pb"
+	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -22,9 +24,10 @@ type Server struct {
 	log *logrus.Logger
 
 	listenAddress string
+	databaseDSN   string
 }
 
-func NewServer(logger *logrus.Logger, listenAddress string) *Server {
+func NewServer(logger *logrus.Logger, listenAddress, databaseDSN string) *Server {
 	entry := logger.WithField("potato", "server")
 
 	opts := []grpc.ServerOption{
@@ -37,16 +40,23 @@ func NewServer(logger *logrus.Logger, listenAddress string) *Server {
 
 	srv := grpc.NewServer(opts...)
 
-	pb.RegisterPotatoServer(srv, &PotatoServer{})
-
 	return &Server{
 		srv:           srv,
 		log:           logger,
 		listenAddress: listenAddress,
+		databaseDSN:   databaseDSN,
 	}
 }
 
 func (s *Server) Serve(ctx context.Context) error {
+	conn, err := sqlx.Open("postgres", s.databaseDSN)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	pb.RegisterPotatoServer(s.srv, &PotatoServer{conn})
+
 	l, err := net.Listen("tcp", s.listenAddress)
 	if err != nil {
 		return err
@@ -76,10 +86,39 @@ func (s *Server) Serve(ctx context.Context) error {
 	return g.Run()
 }
 
-type PotatoServer struct{}
+type PotatoServer struct {
+	DB *sqlx.DB
+}
 
-func (p *PotatoServer) Status(ctx context.Context, plan *pb.Plan) (*pb.Plan, error) {
-	return &pb.Plan{}, nil
+func (p *PotatoServer) GetStatus(ctx context.Context, in *pb.Status) (*pb.Status, error) {
+	tx, err := p.DB.PreparexContext(ctx, `SELECT version, ports, replicas FROM releases WHERE hostname=$1 ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	var result []struct {
+		Version  string `db:"version"`
+		Ports    string `db:"ports"`
+		Replicas int64  `db:"replicas"`
+	}
+
+	if err := tx.SelectContext(ctx, &result, in.GetId()); err != nil {
+		return nil, err
+	}
+
+	response := &pb.Status{
+		Id:       in.GetId(),
+		Services: []*pb.Service{},
+	}
+
+	for _, res := range result {
+		response.Services = append(response.Services, &pb.Service{
+			Image:    res.Version,
+			Replicas: uint64(res.Replicas),
+			Ports:    strings.Split(res.Ports, ";"),
+		})
+	}
+
+	return response, nil
 }
 
 func (s *Server) logError(err error) {

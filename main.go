@@ -7,11 +7,13 @@ import (
 	"os"
 
 	"github.com/DATA-DOG/godog/colors"
-	"github.com/alileza/potato/agent"
-	"github.com/alileza/potato/server"
+	"github.com/docker/docker/client"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/alileza/potato/agent"
+	"github.com/alileza/potato/server"
 )
 
 // AppHelpTemplate is the text template for the Default help topic.
@@ -29,6 +31,9 @@ func main() {
 		LogLevel         string
 		ListenAddress    string
 		AdvertiseAddress string
+		MigrationPath    string
+		DatabaseDSN      string
+		RunMigration     bool
 	}
 	cli.AppHelpTemplate = AppHelpTemplate
 
@@ -67,6 +72,26 @@ func main() {
 			EnvVar:      "ADVERTISE_ADDRESS",
 			Destination: &config.AdvertiseAddress,
 		},
+		cli.StringFlag{
+			Name:        "migration-path",
+			Usage:       "Database migration path for updating servers",
+			Value:       "./migrations",
+			EnvVar:      "MIGRATION_PATH",
+			Destination: &config.MigrationPath,
+		},
+		cli.StringFlag{
+			Name:        "database-dsn",
+			Usage:       "Database data source name",
+			Value:       "postgres://potato:potato@localhost:5432/potato?sslmode=disable",
+			EnvVar:      "DATABASE_DSN",
+			Destination: &config.DatabaseDSN,
+		},
+		cli.BoolFlag{
+			Name:        "run-migration",
+			Usage:       "Run database migration",
+			EnvVar:      "RUN_MIGRATION",
+			Destination: &config.RunMigration,
+		},
 	}
 
 	app.Before = func(ctx *cli.Context) error {
@@ -78,6 +103,10 @@ func main() {
 			config.ID, _ = os.Hostname()
 		}
 
+		if config.RunMigration {
+			return migrateUp(config.MigrationPath, config.DatabaseDSN)
+		}
+
 		return nil
 	}
 
@@ -85,12 +114,17 @@ func main() {
 		l := logrus.New()
 		l.SetLevel(logrus.InfoLevel)
 
+		dockerClient, err := client.NewEnvClient()
+		if err != nil {
+			return err
+		}
+
 		ctxx := context.Background()
 		switch ctx.Args().First() {
 		case "server":
-			err = server.NewServer(l, config.ListenAddress).Serve(ctxx)
+			err = server.NewServer(l, config.ListenAddress, config.DatabaseDSN).Serve(ctxx)
 		case "agent":
-			err = agent.NewAgent(l, config.ID, config.ListenAddress, config.AdvertiseAddress).Start(ctxx)
+			err = agent.NewAgent(l, dockerClient, config.ID, config.ListenAddress, config.AdvertiseAddress).Start(ctxx)
 		default:
 			return errors.New("This command takes one argument: <agent|server>\nFor additional help try 'potato -help'")
 		}

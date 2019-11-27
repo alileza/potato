@@ -3,12 +3,16 @@ syntax = "proto3";
 package potato;
 
 service Potato {
-  rpc Status(Plan) returns (Plan) {}
+  rpc GetStatus(Status) returns (Status) {}
 }
 
-message Plan {
+message Status {
   string id = 1;
-  repeated Container containers = 2;
+  repeated Service services = 2;
 }
 
-message Container {}
+message Service {
+  string image = 1;
+  repeated string ports = 2;
+  uint64 replicas = 3;
+}

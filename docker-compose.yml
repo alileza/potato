@@ -8,3 +8,11 @@ services:
       "./potato.proto:/potato.proto",
       "./pb:/out"
     ]
+  postgres:
+    image: postgres:11
+    ports:
+        - "5432:5432"
+    environment:
+      POSTGRES_USER: potato
+      POSTGRES_PASSWORD: potato
+      POSTGRES_DB: potato

@@ -24,102 +24,129 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type Plan struct {
-	Id                   string       `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Containers           []*Container `protobuf:"bytes,2,rep,name=containers,proto3" json:"containers,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
+type Status struct {
+	Id                   string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Services             []*Service `protobuf:"bytes,2,rep,name=services,proto3" json:"services,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *Plan) Reset()         { *m = Plan{} }
-func (m *Plan) String() string { return proto.CompactTextString(m) }
-func (*Plan) ProtoMessage()    {}
-func (*Plan) Descriptor() ([]byte, []int) {
+func (m *Status) Reset()         { *m = Status{} }
+func (m *Status) String() string { return proto.CompactTextString(m) }
+func (*Status) ProtoMessage()    {}
+func (*Status) Descriptor() ([]byte, []int) {
 	return fileDescriptor_76ce0f17e882bde7, []int{0}
 }
 
-func (m *Plan) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Plan.Unmarshal(m, b)
+func (m *Status) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Status.Unmarshal(m, b)
 }
-func (m *Plan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Plan.Marshal(b, m, deterministic)
+func (m *Status) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Status.Marshal(b, m, deterministic)
 }
-func (m *Plan) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Plan.Merge(m, src)
+func (m *Status) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Status.Merge(m, src)
 }
-func (m *Plan) XXX_Size() int {
-	return xxx_messageInfo_Plan.Size(m)
+func (m *Status) XXX_Size() int {
+	return xxx_messageInfo_Status.Size(m)
 }
-func (m *Plan) XXX_DiscardUnknown() {
-	xxx_messageInfo_Plan.DiscardUnknown(m)
+func (m *Status) XXX_DiscardUnknown() {
+	xxx_messageInfo_Status.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Plan proto.InternalMessageInfo
+var xxx_messageInfo_Status proto.InternalMessageInfo
 
-func (m *Plan) GetId() string {
+func (m *Status) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *Plan) GetContainers() []*Container {
+func (m *Status) GetServices() []*Service {
 	if m != nil {
-		return m.Containers
+		return m.Services
 	}
 	return nil
 }
 
-type Container struct {
+type Service struct {
+	Image                string   `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	Ports                []string `protobuf:"bytes,2,rep,name=ports,proto3" json:"ports,omitempty"`
+	Replicas             uint64   `protobuf:"varint,3,opt,name=replicas,proto3" json:"replicas,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Container) Reset()         { *m = Container{} }
-func (m *Container) String() string { return proto.CompactTextString(m) }
-func (*Container) ProtoMessage()    {}
-func (*Container) Descriptor() ([]byte, []int) {
+func (m *Service) Reset()         { *m = Service{} }
+func (m *Service) String() string { return proto.CompactTextString(m) }
+func (*Service) ProtoMessage()    {}
+func (*Service) Descriptor() ([]byte, []int) {
 	return fileDescriptor_76ce0f17e882bde7, []int{1}
 }
 
-func (m *Container) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Container.Unmarshal(m, b)
+func (m *Service) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Service.Unmarshal(m, b)
 }
-func (m *Container) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Container.Marshal(b, m, deterministic)
+func (m *Service) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Service.Marshal(b, m, deterministic)
 }
-func (m *Container) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Container.Merge(m, src)
+func (m *Service) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Service.Merge(m, src)
 }
-func (m *Container) XXX_Size() int {
-	return xxx_messageInfo_Container.Size(m)
+func (m *Service) XXX_Size() int {
+	return xxx_messageInfo_Service.Size(m)
 }
-func (m *Container) XXX_DiscardUnknown() {
-	xxx_messageInfo_Container.DiscardUnknown(m)
+func (m *Service) XXX_DiscardUnknown() {
+	xxx_messageInfo_Service.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Container proto.InternalMessageInfo
+var xxx_messageInfo_Service proto.InternalMessageInfo
+
+func (m *Service) GetImage() string {
+	if m != nil {
+		return m.Image
+	}
+	return ""
+}
+
+func (m *Service) GetPorts() []string {
+	if m != nil {
+		return m.Ports
+	}
+	return nil
+}
+
+func (m *Service) GetReplicas() uint64 {
+	if m != nil {
+		return m.Replicas
+	}
+	return 0
+}
 
 func init() {
-	proto.RegisterType((*Plan)(nil), "potato.Plan")
-	proto.RegisterType((*Container)(nil), "potato.Container")
+	proto.RegisterType((*Status)(nil), "potato.Status")
+	proto.RegisterType((*Service)(nil), "potato.Service")
 }
 
 func init() { proto.RegisterFile("potato.proto", fileDescriptor_76ce0f17e882bde7) }
 
 var fileDescriptor_76ce0f17e882bde7 = []byte{
-	// 136 bytes of a gzipped FileDescriptorProto
+	// 179 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0xc8, 0x2f, 0x49,
-	0x2c, 0xc9, 0xd7, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x83, 0xf0, 0x94, 0x3c, 0xb9, 0x58,
-	0x02, 0x72, 0x12, 0xf3, 0x84, 0xf8, 0xb8, 0x98, 0x32, 0x53, 0x24, 0x18, 0x15, 0x18, 0x35, 0x38,
-	0x83, 0x98, 0x32, 0x53, 0x84, 0x0c, 0xb9, 0xb8, 0x92, 0xf3, 0xf3, 0x4a, 0x12, 0x33, 0xf3, 0x52,
-	0x8b, 0x8a, 0x25, 0x98, 0x14, 0x98, 0x35, 0xb8, 0x8d, 0x04, 0xf5, 0xa0, 0x46, 0x38, 0xc3, 0x64,
-	0x82, 0x90, 0x14, 0x29, 0x71, 0x73, 0x71, 0xc2, 0x25, 0x8c, 0x0c, 0xb8, 0xd8, 0x02, 0xc0, 0x8a,
-	0x85, 0xd4, 0xb8, 0xd8, 0x82, 0x4b, 0x12, 0x4b, 0x4a, 0x8b, 0x85, 0x78, 0x60, 0xfa, 0x41, 0x36,
-	0x4a, 0xa1, 0xf0, 0x94, 0x18, 0x92, 0xd8, 0xc0, 0x0e, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff,
-	0x3f, 0x0c, 0xfd, 0x5d, 0xa8, 0x00, 0x00, 0x00,
+	0x2c, 0xc9, 0xd7, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x83, 0xf0, 0x94, 0x5c, 0xb9, 0xd8,
+	0x82, 0x4b, 0x12, 0x4b, 0x4a, 0x8b, 0x85, 0xf8, 0xb8, 0x98, 0x32, 0x53, 0x24, 0x18, 0x15, 0x18,
+	0x35, 0x38, 0x83, 0x98, 0x32, 0x53, 0x84, 0xb4, 0xb9, 0x38, 0x8a, 0x53, 0x8b, 0xca, 0x32, 0x93,
+	0x53, 0x8b, 0x25, 0x98, 0x14, 0x98, 0x35, 0xb8, 0x8d, 0xf8, 0xf5, 0xa0, 0x46, 0x04, 0x43, 0xc4,
+	0x83, 0xe0, 0x0a, 0x94, 0x02, 0xb9, 0xd8, 0xa1, 0x82, 0x42, 0x22, 0x5c, 0xac, 0x99, 0xb9, 0x89,
+	0xe9, 0xa9, 0x50, 0xa3, 0x20, 0x1c, 0x90, 0x68, 0x41, 0x7e, 0x51, 0x09, 0xc4, 0x28, 0xce, 0x20,
+	0x08, 0x47, 0x48, 0x8a, 0x8b, 0xa3, 0x28, 0xb5, 0x20, 0x27, 0x33, 0x39, 0xb1, 0x58, 0x82, 0x59,
+	0x81, 0x51, 0x83, 0x25, 0x08, 0xce, 0x37, 0x32, 0xe7, 0x62, 0x0b, 0x00, 0x5b, 0x27, 0xa4, 0xcb,
+	0xc5, 0xe9, 0x9e, 0x5a, 0x02, 0x73, 0x26, 0xdc, 0x11, 0x60, 0xbe, 0x14, 0x1a, 0x5f, 0x89, 0x21,
+	0x89, 0x0d, 0xec, 0x43, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x86, 0x38, 0xbd, 0xc5, 0xf1,
+	0x00, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -134,7 +161,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type PotatoClient interface {
-	Status(ctx context.Context, in *Plan, opts ...grpc.CallOption) (*Plan, error)
+	GetStatus(ctx context.Context, in *Status, opts ...grpc.CallOption) (*Status, error)
 }
 
 type potatoClient struct {
@@ -145,9 +172,9 @@ func NewPotatoClient(cc *grpc.ClientConn) PotatoClient {
 	return &potatoClient{cc}
 }
 
-func (c *potatoClient) Status(ctx context.Context, in *Plan, opts ...grpc.CallOption) (*Plan, error) {
-	out := new(Plan)
-	err := c.cc.Invoke(ctx, "/potato.Potato/Status", in, out, opts...)
+func (c *potatoClient) GetStatus(ctx context.Context, in *Status, opts ...grpc.CallOption) (*Status, error) {
+	out := new(Status)
+	err := c.cc.Invoke(ctx, "/potato.Potato/GetStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,35 +183,35 @@ func (c *potatoClient) Status(ctx context.Context, in *Plan, opts ...grpc.CallOp
 
 // PotatoServer is the server API for Potato service.
 type PotatoServer interface {
-	Status(context.Context, *Plan) (*Plan, error)
+	GetStatus(context.Context, *Status) (*Status, error)
 }
 
 // UnimplementedPotatoServer can be embedded to have forward compatible implementations.
 type UnimplementedPotatoServer struct {
 }
 
-func (*UnimplementedPotatoServer) Status(ctx context.Context, req *Plan) (*Plan, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
+func (*UnimplementedPotatoServer) GetStatus(ctx context.Context, req *Status) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
 
 func RegisterPotatoServer(s *grpc.Server, srv PotatoServer) {
 	s.RegisterService(&_Potato_serviceDesc, srv)
 }
 
-func _Potato_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Plan)
+func _Potato_GetStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Status)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PotatoServer).Status(ctx, in)
+		return srv.(PotatoServer).GetStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/potato.Potato/Status",
+		FullMethod: "/potato.Potato/GetStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PotatoServer).Status(ctx, req.(*Plan))
+		return srv.(PotatoServer).GetStatus(ctx, req.(*Status))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -194,8 +221,8 @@ var _Potato_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*PotatoServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Status",
-			Handler:    _Potato_Status_Handler,
+			MethodName: "GetStatus",
+			Handler:    _Potato_GetStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
