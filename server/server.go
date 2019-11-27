@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"net"
 	"net/http"
 	"strings"
@@ -96,9 +97,9 @@ func (p *PotatoServer) GetStatus(ctx context.Context, in *pb.Status) (*pb.Status
 		return nil, err
 	}
 	var result []struct {
-		Version  string `db:"version"`
-		Ports    string `db:"ports"`
-		Replicas int64  `db:"replicas"`
+		Version  string         `db:"version"`
+		Ports    sql.NullString `db:"ports"`
+		Replicas int64          `db:"replicas"`
 	}
 
 	if err := tx.SelectContext(ctx, &result, in.GetId()); err != nil {
@@ -114,7 +115,7 @@ func (p *PotatoServer) GetStatus(ctx context.Context, in *pb.Status) (*pb.Status
 		response.Services = append(response.Services, &pb.Service{
 			Image:    res.Version,
 			Replicas: uint64(res.Replicas),
-			Ports:    strings.Split(res.Ports, ";"),
+			Ports:    strings.Split(res.Ports.String, ";"),
 		})
 	}
 

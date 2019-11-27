@@ -1,15 +1,13 @@
 package main
+
 import (
 	"database/sql"
 	"errors"
+	"io/ioutil"
 	"strings"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 )
 
 func migrateUp(path, datasource string) error {
@@ -42,14 +40,31 @@ func migrateUp(path, datasource string) error {
 		conn.Close()
 	}
 
-	mg, err := migrate.New(path, datasource)
+	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return err
 	}
 
-	err = mg.Up()
-	if err != nil && err != migrate.ErrNoChange {
+	conn, err := sql.Open("postgres", datasource)
+	if err != nil {
 		return err
+	}
+
+	for _, file := range files {
+		if !strings.Contains(file.Name(), ".up.") {
+			continue
+		}
+		if !strings.Contains(file.Name(), ".sql") {
+			continue
+		}
+
+		content, err := ioutil.ReadFile(path + "/" + file.Name())
+		if err != nil {
+			return err
+		}
+		if _, err := conn.Exec(string(content)); err != nil && !strings.Contains(err.Error(), "already exist") {
+			return err
+		}
 	}
 
 	return nil

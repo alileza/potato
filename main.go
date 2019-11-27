@@ -33,7 +33,7 @@ func main() {
 		AdvertiseAddress string
 		MigrationPath    string
 		DatabaseDSN      string
-		RunMigration     bool
+		SkipMigration    bool
 	}
 	cli.AppHelpTemplate = AppHelpTemplate
 
@@ -87,10 +87,10 @@ func main() {
 			Destination: &config.DatabaseDSN,
 		},
 		cli.BoolFlag{
-			Name:        "run-migration",
-			Usage:       "Run database migration",
-			EnvVar:      "RUN_MIGRATION",
-			Destination: &config.RunMigration,
+			Name:        "skip-migration",
+			Usage:       "Skip database migration",
+			EnvVar:      "SKIP_MIGRATION",
+			Destination: &config.SkipMigration,
 		},
 	}
 
@@ -101,10 +101,6 @@ func main() {
 
 		if config.ID == "" {
 			config.ID, _ = os.Hostname()
-		}
-
-		if config.RunMigration {
-			return migrateUp(config.MigrationPath, config.DatabaseDSN)
 		}
 
 		return nil
@@ -122,7 +118,12 @@ func main() {
 		ctxx := context.Background()
 		switch ctx.Args().First() {
 		case "server":
-			err = server.NewServer(l, config.ListenAddress, config.DatabaseDSN).Serve(ctxx)
+			if !config.SkipMigration {
+				err = migrateUp(config.MigrationPath, config.DatabaseDSN)
+			}
+			if err == nil {
+				err = server.NewServer(l, config.ListenAddress, config.DatabaseDSN).Serve(ctxx)
+			}
 		case "agent":
 			err = agent.NewAgent(l, dockerClient, config.ID, config.ListenAddress, config.AdvertiseAddress).Start(ctxx)
 		default:

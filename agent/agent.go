@@ -14,6 +14,7 @@ import (
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/oklog/run"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -21,11 +22,26 @@ import (
 	pb "github.com/alileza/potato/pb"
 )
 
+var (
+	// ServicesInFlight a gauger of services currently being served
+	ServicesInFlight = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "potato",
+		Name:      "services_in_flight",
+		Help:      "A gauge of services currently being served by the potato agent.",
+	}, []string{
+		"node_id", "service_name", "version", "replicas", "created_at",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(ServicesInFlight)
+}
+
 type Agent struct {
 	log          *logrus.Logger
 	dockerClient *dockerclient.Client
 
-	ID               string
+	NodeID           string
 	ListenAddress    string
 	AdvertiseAddress string
 }
@@ -33,14 +49,14 @@ type Agent struct {
 func NewAgent(
 	logger *logrus.Logger,
 	dockerClient *dockerclient.Client,
-	ID string,
+	NodeID string,
 	listenAddress string,
 	advertiseAddress string,
 ) *Agent {
 	return &Agent{
 		log:              logger,
 		dockerClient:     dockerClient,
-		ID:               ID,
+		NodeID:           NodeID,
 		ListenAddress:    listenAddress,
 		AdvertiseAddress: advertiseAddress,
 	}
@@ -63,19 +79,13 @@ func (a *Agent) Start(ctx context.Context) error {
 		return err
 	}
 
+	if err := a.initSwarm(ctx); err != nil {
+		return err
+	}
+
 	client := pb.NewPotatoClient(conn)
 
 	var g run.Group
-
-	a.log.Info("Initiating docker swarm request")
-	resp, err := a.dockerClient.SwarmInit(ctx, swarm.InitRequest{
-		ListenAddr:      a.ListenAddress,
-		ForceNewCluster: true,
-	})
-	if err != nil {
-		return err
-	}
-	a.log.Info(resp)
 
 	g.Add(func() error {
 		for range t.C {
@@ -85,7 +95,7 @@ func (a *Agent) Start(ctx context.Context) error {
 			default:
 			}
 
-			result, err := client.GetStatus(ctx, &pb.Status{Id: a.ID})
+			result, err := client.GetStatus(ctx, &pb.Status{Id: a.NodeID})
 			if err != nil {
 				a.log.Errorf("Failed to get status: %v", err)
 				continue
@@ -101,9 +111,25 @@ func (a *Agent) Start(ctx context.Context) error {
 				continue
 			}
 
+			// create runningServicesMap
 			runningServicesMap := make(map[string]struct{})
 			for _, svc := range runningServices {
 				runningServicesMap[svc.Spec.TaskTemplate.ContainerSpec.Image] = struct{}{}
+				_, _, err := a.dockerClient.ServiceInspectWithRaw(ctx, svc.ID)
+				if err != nil {
+					a.log.Errorf("Failed to load servicesList: %v", err)
+					continue
+				}
+
+				labels := []string{
+					a.NodeID,
+					svc.Spec.TaskTemplate.ContainerSpec.Image,
+					svc.Spec.TaskTemplate.ContainerSpec.Image,
+					fmt.Sprintf("%d", *svc.Spec.Mode.Replicated.Replicas),
+					svc.CreatedAt.Format(time.RFC3339),
+				}
+
+				ServicesInFlight.WithLabelValues(labels...).SetToCurrentTime()
 			}
 
 			for _, service := range runningServices {
@@ -144,6 +170,24 @@ func (a *Agent) Start(ctx context.Context) error {
 	return g.Run()
 }
 
+func (a *Agent) initSwarm(ctx context.Context) error {
+	cluster, err := a.dockerClient.SwarmInspect(ctx)
+	if err == nil {
+		a.log.Infof("Connected to swarm cluster : %s", cluster.ID)
+		return nil
+	}
+	if !strings.Contains(err.Error(), "docker swarm init") {
+		return err
+	}
+
+	clusterID, err := a.dockerClient.SwarmInit(ctx, swarm.InitRequest{})
+	if err != nil {
+		return err
+	}
+	a.log.Infof("Connected to swarm cluster : %s", clusterID)
+	return nil
+}
+
 func (a *Agent) createService(ctx context.Context, service *pb.Service) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
@@ -151,7 +195,9 @@ func (a *Agent) createService(ctx context.Context, service *pb.Service) error {
 	var portConfig []swarm.PortConfig
 	for _, port := range service.GetPorts() {
 		p := strings.Split(port, ":")
-
+		if len(p) <= 0 || (len(p) == 1 && p[0] == "") {
+			continue
+		}
 		targetPort, err := strconv.ParseInt(p[0], 10, 32)
 		if err != nil {
 			return fmt.Errorf("Failed to parse target port: %v", err)
