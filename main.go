@@ -27,7 +27,7 @@ Options:
 
 func main() {
 	var config struct {
-		ID               string
+		NodeID           string
 		LogLevel         string
 		ListenAddress    string
 		AdvertiseAddress string
@@ -40,16 +40,17 @@ func main() {
 	log := log.New(os.Stdout, "", 0)
 
 	app := cli.NewApp()
+	app.Version = printVersion()
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:  "env.file, e",
 			Usage: "Environment variable file path",
 		},
 		cli.StringFlag{
-			Name:        "id",
+			Name:        "node-id",
 			Usage:       "Node identifier",
-			EnvVar:      "ID",
-			Destination: &config.ID,
+			EnvVar:      "NODE_ID",
+			Destination: &config.NodeID,
 		},
 		cli.StringFlag{
 			Name:        "log-level",
@@ -99,8 +100,8 @@ func main() {
 			return godotenv.Load(envFile)
 		}
 
-		if config.ID == "" {
-			config.ID, _ = os.Hostname()
+		if config.NodeID == "" {
+			config.NodeID, _ = os.Hostname()
 		}
 
 		return nil
@@ -125,7 +126,7 @@ func main() {
 				err = server.NewServer(l, config.ListenAddress, config.DatabaseDSN).Serve(ctxx)
 			}
 		case "agent":
-			err = agent.NewAgent(l, dockerClient, config.ID, config.ListenAddress, config.AdvertiseAddress).Start(ctxx)
+			err = agent.NewAgent(l, dockerClient, config.NodeID, config.ListenAddress, config.AdvertiseAddress).Start(ctxx)
 		default:
 			return errors.New("This command takes one argument: <agent|server>\nFor additional help try 'potato -help'")
 		}

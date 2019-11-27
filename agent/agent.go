@@ -176,11 +176,8 @@ func (a *Agent) initSwarm(ctx context.Context) error {
 		a.log.Infof("Connected to swarm cluster : %s", cluster.ID)
 		return nil
 	}
-	if !strings.Contains(err.Error(), "docker swarm init") {
-		return err
-	}
 
-	clusterID, err := a.dockerClient.SwarmInit(ctx, swarm.InitRequest{})
+	clusterID, err := a.dockerClient.SwarmInit(ctx, swarm.InitRequest{ListenAddr: a.AdvertiseAddress})
 	if err != nil {
 		return err
 	}
