@@ -29,3 +29,7 @@ potato -node-id [custom host id, by default it will be hostname] \
 ```
 
 Once this set-up adding a new rows on database based on `node-id` would allow you to add/remove services from specific node you desire.
+
+# Demo
+
+[Video URL](http://157.230.113.250:81/)
