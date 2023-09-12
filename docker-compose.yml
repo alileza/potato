@@ -1,18 +1,35 @@
-version: '3.4'
+version: '3.7'
+
 services:
+
   generate-pb-go:
+
     image: alileza/grpc-gen:latest
+
     entrypoint: > 
+
       sh -c "protoc -I / --go_out=plugins=grpc:/out /potato.proto && cd /out && ls *.pb.go | xargs -n1 -IX bash -c 'sed s/,omitempty// X > X.tmp && mv X{.tmp,}'"
+
     volumes: [
+
       "./potato.proto:/potato.proto",
+
       "./pb:/out"
+
     ]
+
   postgres:
+
     image: postgres:11
+
     ports:
+
         - "5432:5432"
+
     environment:
+
       POSTGRES_USER: potato
+
       POSTGRES_PASSWORD: potato
+
       POSTGRES_DB: potato
